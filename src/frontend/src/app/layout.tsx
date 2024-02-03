@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { ThemeSwitcher } from "./theme-switcher";
 
 import "react-toastify/dist/ReactToastify.css";
+import Script from "next/script";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -67,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.className} min-h-full bg-white dark:bg-black w-full`}
       >
@@ -76,6 +77,20 @@ export default function RootLayout({
           <PageNav />
           {children}
         </Providers>
+
+        <Script
+          id="theme-switcher"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark')
+    }
+        `,
+          }}
+        />
       </body>
     </html>
   );

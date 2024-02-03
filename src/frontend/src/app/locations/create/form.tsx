@@ -2,29 +2,123 @@
 
 import React from "react";
 import { ToastContainer, toast } from "react-toastify";
-import { server_createLocation } from "./server-actions/create-location";
 import { Controls } from "./page";
+import { betterFetch } from "@/utils";
 
 type CreateLocationFormProps = {
   controls: Controls;
 };
 
+type Notification = any;
+
+function waitForNotification(timeout: number): Promise<Notification> {
+  const eventSource = new EventSource(
+    "http://localhost:3001/api/notifications?stream=notifications",
+  );
+
+  const ac = new AbortController();
+
+  eventSource.addEventListener(
+    "notification",
+    (msg) => {
+      ac.abort(msg.data);
+    },
+    { once: true, signal: ac.signal },
+  );
+
+  eventSource.onerror = (event) => {
+    console.error("[Eventsource] Errored", { event });
+    eventSource.close();
+  };
+
+  eventSource.onopen = () => {
+    console.log("[Eventsource] Opened");
+  };
+
+  console.log(
+    `[Eventsource] Connecting for notifications - Closing in ${timeout}ms`,
+  );
+
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      console.error("[Eventsource] Reached timeout");
+      reject(null);
+    }, timeout);
+
+    const abortHandler = (e: Event) => {
+      const msg = (e.target! as any).reason as any;
+      console.log("[Eventsource] Received message before timeout");
+      console.log(msg);
+      clearTimeout(id);
+      eventSource.close();
+      ac.signal.removeEventListener("abort", abortHandler);
+      resolve(msg);
+    };
+
+    ac.signal.addEventListener("abort", abortHandler);
+  });
+}
+
 export function CreateLocationForm({
-  controls,
+  controls: { appendLog, delaySeconds },
 }: CreateLocationFormProps): React.ReactNode {
   const categories = ["Town", "City", "County/Region", "Country", "Continent"];
   async function submitForm(formData: FormData) {
-    const res = await server_createLocation(formData);
+    /*
+     * Server action
+    // Partially apply options to the server action
+    const createLocation = server_createLocation.bind(null, { delaySeconds });
+    const res = await createLocation(formData);
+    */
+
+    const jsonData = JSON.stringify(Object.fromEntries(formData));
+    const res = await betterFetch<{ id: string }>(
+      "http://localhost:3001/api/location/create",
+      {
+        method: "POST",
+        body: jsonData,
+      },
+    );
 
     if (!res.ok) {
-      toast.error("Something went wrong");
-      controls.setResponseState("error");
+      console.error(res.error);
+      toast.error(
+        <>
+          Something went wrong <br />
+          <b>{res.error}</b>
+        </>,
+      );
+
       return;
     }
 
-    controls.appendLog(JSON.stringify(res.data));
-    controls.setResponseState("success");
-    toast.success("Success!");
+    console.log("[Form] Response:", JSON.stringify(res.data));
+    await waitForNotification(1_000)
+      .then((msg) => {
+        const json = JSON.parse(msg);
+        console.log(
+          "[Eventsource] Notification: ",
+          JSON.stringify(json, null, 2),
+        );
+
+        toast.success(
+          <>
+            <h2>Success!</h2>
+            <pre>{JSON.stringify(json, null, 2)}</pre>
+          </>,
+        );
+      })
+      .catch(() => {
+        toast.success(
+          <div className="gap-y-2">
+            <h2>Success!</h2>
+            <p className="text-sm">
+              The Location is not ready yet, but please check back soon
+            </p>
+            <p className="text-sm">Location ID: {res.data.id}</p>
+          </div>,
+        );
+      });
   }
 
   return (
@@ -98,7 +192,7 @@ export function CreateLocationForm({
               <textarea
                 id="description"
                 name="description"
-                rows={8}
+                rows={3}
                 className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                 placeholder="Your description here"
               ></textarea>

@@ -1,17 +1,28 @@
 "use client";
-import React from "react";
-import { useTheme } from "next-themes";
+import React, { useEffect, useState } from "react";
 
 export function ThemeSwitcher(): React.ReactNode {
-  const { systemTheme, theme, setTheme } = useTheme();
-  const currentTheme = theme === "system" ? systemTheme : theme;
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setTheme(localStorage.getItem("color-theme") || "light");
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("color-theme", theme || "light");
+    if (theme == "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
 
   return (
     <button
       type="button"
-      onClick={() =>
-        currentTheme == "dark" ? setTheme("light") : setTheme("dark")
-      }
+      onClick={() => (theme == "dark" ? setTheme("light") : setTheme("dark"))}
       className="transition-all duration-200 dark:text-white border norder-gray-200 dark:border-gray-900 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center me-2"
     >
       {theme == "dark" ? (

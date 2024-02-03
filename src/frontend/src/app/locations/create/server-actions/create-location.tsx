@@ -3,7 +3,13 @@
 import { betterFetch } from "@/utils";
 import { revalidateTag } from "next/cache";
 
-export async function server_createLocation(formData: FormData) {
+type CreateLocationOpts = {
+  delaySeconds: number;
+};
+export async function server_createLocation(
+  { delaySeconds }: CreateLocationOpts,
+  formData: FormData,
+) {
   // TODO: Validation
   const jsonData = JSON.stringify(Object.fromEntries(formData));
   console.log("Creating location", jsonData);
