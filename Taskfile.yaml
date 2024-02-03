@@ -1,0 +1,85 @@
+version: "3"
+
+output: prefixed
+
+tasks:
+  default:
+    cmd: task --list
+
+  serve:
+    desc: Runs backend & frontend
+    deps:
+      - serve:frontend
+      - serve:backend
+
+  serve:backend:
+    desc: Runs backend processes
+    deps:
+      - server:backend:server
+      - server:backend:reactor
+
+  serve:backend:server:
+    desc: Runs backend server
+    dir: src/backend
+    cmd: go run server/server.go
+
+  serve:backend:reactor:
+    desc: Runs backend reactor
+    dir: src/backend
+    cmd: go run reactor/reactor.go
+
+  serve:frontend:
+    desc: Runs frontend
+    dir: src/frontend
+    cmd: pnpm run dev
+
+  dev:infra:up:
+    desc: Spin up dev infra
+    cmds:
+      - docker compose up -d
+      - cp ./nats/nats-context.json {{.HOME}}/.config/nats/context/cqrs_test.json
+      - nats context select cqrs_test
+
+  dev:infra:down:
+    desc: Tear down dev infra
+    cmds:
+      - docker-compose down
+      - nats context rm cqrs_test
+
+  dev:sub:
+    desc: Subscribe to NATS stream(s)
+    deps:
+      - dev:sub:commands
+      - dev:sub:notifications
+
+  dev:sub:commands:
+    desc: Subscribe to commands (Stream)
+    cmd: nats sub --all 'commands.>'
+
+  dev:sub:notifications:
+    desc: Subscribe to notifications (PubSub)
+    cmd: nats sub 'notifications.>'
+
+  dev:purge:
+    desc: Purges NATS stream(s)
+    cmds:
+      - nats consumer rm all reactor --force
+      - nats stream purge --force all > /dev/null
+      - nats kv del locations --force
+
+  dev:seed:
+    desc: Seeds some data for backend
+    cmds:
+      # UUIDs
+      - for:
+          - one
+          - two
+          - three
+          - four
+        cmd: |
+          curl -s -XPOST localhost:3000/location/create -d '{ 
+            "name": "{{.ITEM}}", 
+            "category": "Town",
+            "description": "Some description"
+          }'
+      - curl -s -XGET localhost:3000/location | jq

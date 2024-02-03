@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #000;
+  --background: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: #fff;
+    --background: #000;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: var(--background);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
