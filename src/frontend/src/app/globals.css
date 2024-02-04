@@ -14,9 +14,9 @@
   :root[class~="dark"] {
     --foreground: #fff;
     --background: #000;
-    --border: var(--tw-gray-700);
+    --border: var(--tw-gray-900);
     --forminput-bg: var(--tw-gray-950);
-    --forminput-border: var(--tw-gray-600);
+    --forminput-border: var(--tw-gray-800);
   }
 }
 

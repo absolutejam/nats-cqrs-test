@@ -176,7 +176,13 @@ export function CreateLocationForm({
                 type="text"
                 name="name"
                 id="name"
-                className="bg-forminput-bg border border-forminput-border text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                className="
+                  block w-full p-2.5 text-sm rounded-lg
+                  bg-forminput-bg border border-forminput-border 
+                  placeholder-gray-600 dark:placeholder-gray-400 
+                  focus:ring-primary-500 focus:border-primary-500
+                  dark:focus:ring-primary-500 dark:focus:border-primary-500
+                "
                 placeholder="Type location name"
                 required
               />
@@ -196,12 +202,12 @@ export function CreateLocationForm({
                   defaultValue=""
                   required
                   className="
-                  block w-full p-2.5 
-                  bg-forminput-bg border border-forminput-border 
-                  text-gray.clone()-900 text-sm rounded-lg 
-                  focus:ring-primary-500 focus:border-primary-500
-                  dark:placeholder-gray-400 
-                  dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    block w-full p-2.5 text-sm rounded-lg
+                    bg-forminput-bg border border-forminput-border 
+                    placeholder-gray-600 dark:placeholder-gray-400 
+                    focus:ring-primary-500 focus:border-primary-500
+                    dark:focus:ring-primary-500 dark:focus:border-primary-500
+                  "
                 >
                   <option value="" disabled hidden>
                     Select category
@@ -226,10 +232,13 @@ export function CreateLocationForm({
                 id="description"
                 name="description"
                 rows={3}
-                className="block p-2.5 w-full text-sm bg-background
-                text-gray-900 rounded-lg border border-forminput-border
-                focus:ring-primary-500 focus:border-primary-500 
-                dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                className="
+                  block w-full p-2.5 text-sm rounded-lg
+                  bg-forminput-bg border border-forminput-border 
+                  placeholder-gray-600 dark:placeholder-gray-400 
+                  focus:ring-primary-500 focus:border-primary-500
+                  dark:focus:ring-primary-500 dark:focus:border-primary-500
+                "
                 placeholder="Your description here"
               ></textarea>
             </div>

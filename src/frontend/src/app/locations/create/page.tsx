@@ -37,7 +37,13 @@ function Options({
                 type="radio"
                 id="await-on-client-radio"
                 name="await-on-server-radio"
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                className="
+                  h-4 w-4 block p-2.5 
+                  bg-gray-50 border 
+                  border-forminput-border 
+                  focus:ring-primary-600 focus:border-primary-600 
+                  dark:focus:ring-primary-500 dark:focus:border-primary-500
+                "
                 defaultChecked={!awaitOnServer}
                 onChange={() => setAwaitOnServer(false)}
               />
@@ -56,7 +62,7 @@ function Options({
                 type="radio"
                 id="await-on-server-radio"
                 name="await-on-server-radio"
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                 defaultChecked={awaitOnServer}
                 onChange={() => setAwaitOnServer(true)}
               />
@@ -79,7 +85,12 @@ function Options({
                 type="checkbox"
                 id="simulate-timeout"
                 name="simulate-timeout"
-                className="bg-gray-50 border h-5 w-5 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                className="
+                  h-5 w-5 rounded-lg block p-2.5 
+                  bg-forminput-bg border border-forminput-border 
+                  focus:ring-primary-600 focus:border-primary-600 
+                  dark:focus:ring-primary-500 dark:focus:border-primary-500
+                "
                 defaultChecked={simulateTimeout}
                 onChange={() => setSimulateTimeout(!simulateTimeout)}
               />
@@ -99,9 +110,11 @@ function Options({
               type="text"
               id="timeout"
               name="timeout"
-              className="bg-gray-50 w-10 block p-2 
-              border text-center border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 
-              dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+              className="
+                w-10 p-2 block border text-sm rounded-lg text-center 
+                bg-forminput-bg border-forminput-border
+                dark:focus:ring-primary-500 dark:focus:border-primary-500
+              "
               defaultValue={notificationTimeout}
               onChange={(ev) => setNotificationTimeout(+ev.currentTarget.value)}
             />
@@ -126,19 +139,19 @@ function ResponseLog({ log }: ResponseLogProps): React.ReactNode {
   return (
     <section className="flex flex-col h-80 overflow-y-auto gap-y-2">
       <div className="flex justify-between items-center">
-        <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+        <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-50">
           Log
         </h2>
         <div className="text-sm pr-2">{log.length} entries</div>
       </div>
 
-      <div className="flex w-full flex-1 flex-col rounded-lg p-3 gap-y-2 border-gray-border bg-gray-50 dark:bg-gray-950 overflow-auto">
+      <div className="flex w-full flex-1 flex-col rounded-lg p-3 gap-y-2 bg-forminput-bg overflow-auto">
         {log.length > 0 ? (
           log.toReversed().map(({ source, msg }, i) => {
             return (
               <div
                 key={i}
-                className="flex flex-col flex-1 rounded border border:gray-200 p-2 bg-background"
+                className="flex flex-col flex-1 rounded border border-border p-2 bg-background"
               >
                 <div className="flex text-sm flex-shrink-0 px-2 pt-2 font-bold">
                   {source}

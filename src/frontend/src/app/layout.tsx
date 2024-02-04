@@ -53,7 +53,7 @@ function PageNav(): React.ReactNode {
                 <h5 className="mb-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                   {name}
                 </h5>
-                <p className="font-normal lowercase text-sm text-gray-400 dark:text-gray-600">
+                <p className="font-normal lowercase text-sm text-gray-400 dark:text-gray-500">
                   {path}
                 </p>
               </a>
