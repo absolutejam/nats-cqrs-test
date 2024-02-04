@@ -1,13 +1,7 @@
-"use client";
-
 import React from "react";
 import { ToastContainer, toast } from "react-toastify";
-import { Controls } from "./page";
 import { betterFetch } from "@/utils";
-
-type CreateLocationFormProps = {
-  controls: Controls;
-};
+import { Controls } from "./page";
 
 type Notification = any;
 
@@ -48,7 +42,6 @@ function waitForNotification(timeout: number): Promise<Notification> {
     const abortHandler = (e: Event) => {
       const msg = (e.target! as any).reason as any;
       console.log("[Eventsource] Received message before timeout");
-      console.log(msg);
       clearTimeout(id);
       eventSource.close();
       ac.signal.removeEventListener("abort", abortHandler);
@@ -59,10 +52,13 @@ function waitForNotification(timeout: number): Promise<Notification> {
   });
 }
 
+type CreateLocationFormProps = Pick<Controls, "appendLog">;
+
 export function CreateLocationForm({
-  controls: { appendLog, delaySeconds },
+  appendLog,
 }: CreateLocationFormProps): React.ReactNode {
   const categories = ["Town", "City", "County/Region", "Country", "Continent"];
+
   async function submitForm(formData: FormData) {
     /*
      * Server action
@@ -92,8 +88,10 @@ export function CreateLocationForm({
       return;
     }
 
-    console.log("[Form] Response:", JSON.stringify(res.data));
-    await waitForNotification(1_000)
+    console.log("[Form] Response:", JSON.stringify(res.data, null, 2));
+    appendLog("Form - API response", JSON.stringify(res.data, null, 2));
+
+    const notification = await waitForNotification(1_000)
       .then((msg) => {
         const json = JSON.parse(msg);
         console.log(
@@ -104,21 +102,24 @@ export function CreateLocationForm({
         toast.success(
           <>
             <h2>Success!</h2>
-            <pre>{JSON.stringify(json, null, 2)}</pre>
           </>,
         );
+
+        return json;
       })
       .catch(() => {
         toast.success(
           <div className="gap-y-2">
             <h2>Success!</h2>
             <p className="text-sm">
-              The Location is not ready yet, but please check back soon
+              Your resource is not ready yet, but should be available soon
             </p>
             <p className="text-sm">Location ID: {res.data.id}</p>
           </div>,
         );
       });
+
+    appendLog("SSE - Notification", JSON.stringify(notification, null, 2));
   }
 
   return (
