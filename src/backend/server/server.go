@@ -84,9 +84,17 @@ type CreateLocationPayload struct {
 	Description string `json:"description"`
 }
 
-func (p CreateLocationPayload) Validate() error {
-	// TODO:
-	return nil
+func (p CreateLocationPayload) ToCommand(id uuid.UUID, createdAt time.Time) (*shared.CreateLocationCommand, error) {
+	// TODO: Validation
+	command := shared.CreateLocationCommand{
+		Id:          id,
+		Name:        p.Name,
+		Category:    p.Category,
+		Description: p.Description,
+		CreatedAt:   createdAt,
+	}
+
+	return &command, nil
 }
 
 type CommandAcceptedResponse struct {
@@ -112,7 +120,7 @@ func (c LocationController) CreateLocationHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	err = payload.Validate()
+	command, err := payload.ToCommand(id, time.Now())
 	if err != nil {
 		c.logger.Error("Failed to validate payload", "err", err)
 		render.Status(r, http.StatusUnprocessableEntity)
@@ -120,13 +128,6 @@ func (c LocationController) CreateLocationHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	command := shared.CreateLocationCommand{
-		Id:          id,
-		Name:        payload.Name,
-		Category:    payload.Category,
-		Description: payload.Description,
-		CreatedAt:   time.Now(),
-	}
 	bytes, err := json.Marshal(command)
 	if err != nil {
 		c.logger.Error("Failed to serialise command", "err", err)
