@@ -185,24 +185,19 @@ func main() {
 
 	// Setup NATS
 	nc, err := nats.Connect(nats.DefaultURL, nats.UserInfo("user", "password"))
-	if err != nil {
-		logger.Error("Failed to connect to NATS server", "err", err)
-		os.Exit(1)
-	}
+	shared.AssertOk(err, logger, "Failed to connect to NATS server")
 
 	js, err := jetstream.New(nc)
-	if err != nil {
-		logger.Error("Failed to initialise JetStream client", "err", err)
-		os.Exit(1)
-	}
+	shared.AssertOk(err, logger, "Failed to initialise JetStream client")
 
-	err = initialiseStreams(js, logger)
-	if err != nil {
-		logger.Error("Failed to setup NATS", "err", err)
-		os.Exit(1)
-	}
+	err = shared.InitialiseStreams(js, logger)
+	shared.AssertOk(err, logger, "Failed to setup NATS streams")
 
-	// Initialise dependencies
+	// NATS KV (for repositories)
+	kv, err := shared.InitialiseKv(js)
+	shared.AssertOk(err, logger, "Failed to create KV bucket")
+
+	// SSE
 	sseServer := sse.New()
 	sseServer.AutoStream = true
 	// It turns out, this is _really_ important...
@@ -216,18 +211,7 @@ func main() {
 	}
 	sseServer.CreateStream(shared.StreamSubjectNotifications)
 
-	kvCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
-	kv, err := js.CreateKeyValue(kvCtx, jetstream.KeyValueConfig{
-		Bucket:  "locations",
-		History: 20,
-	})
-	if err != nil {
-		logger.Error("Failed to create KV bucket", "err", err)
-		os.Exit(1)
-	}
-
+	// Dependenceis
 	locationsRepo := shared.NewNatsKvLocationsRepository(kv, logger.With("source", "locations-repo"))
 	locationsController := NewLocationController(nc, js, locationsRepo, logger.With("source", "locations-controller"))
 
@@ -260,10 +244,7 @@ func main() {
 	go func() {
 		logger.Info(fmt.Sprintf("Serving on %v", serveAddr))
 		err = http.ListenAndServe(serveAddr, r)
-		if err != nil {
-			logger.Error("Failed to serve", "err", err)
-			os.Exit(1)
-		}
+		shared.AssertOk(err, logger, "Failed to start server")
 	}()
 
 	// Notifications bridge (SSE)
@@ -277,10 +258,7 @@ func main() {
 		logger.Info("Starting notification bridge", "subject", subject)
 
 		sub, err := nc.ChanSubscribe(subject, notificationsChan)
-		if err != nil {
-			logger.Error("Failed to subscribe to notifications", "err", err)
-			os.Exit(1)
-		}
+		shared.AssertOk(err, logger, "Failed to subscribe to notifications")
 		defer func() {
 			err := sub.Unsubscribe()
 			if err != nil {
@@ -328,31 +306,4 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	<-done
-}
-
-func initialiseStreams(js jetstream.JetStream, logger *slog.Logger) error {
-	stream, err := js.CreateOrUpdateStream(
-		context.Background(),
-		jetstream.StreamConfig{
-			Name: "all",
-			Subjects: []string{
-				fmt.Sprintf("%s.>", shared.StreamSubjectCommands),
-			},
-		})
-	if err != nil {
-		return err
-	}
-
-	streamInfo, err := stream.Info(context.Background())
-	if err != nil {
-		return err
-	}
-
-	logger.Debug(
-		fmt.Sprintf("Setup stream '%s'", streamInfo.Config.Name),
-		"stream", streamInfo.Config.Name,
-		"subjects", streamInfo.Config.Subjects,
-	)
-	return nil
-
 }

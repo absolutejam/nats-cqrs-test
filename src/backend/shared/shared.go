@@ -44,10 +44,11 @@ type CreateLocationCommand struct {
 //------------------------------------------------------------------------------
 
 type Notification struct {
-	Id      uuid.UUID `json:"id"`
-	Time    time.Time `json:"created_at"`
-	Errors  []string  `json:"errors"`
-	Actions []Action  `json:"actions"`
+	Id      uuid.UUID      `json:"id"`
+	Time    time.Time      `json:"created_at"`
+	Errors  []string       `json:"errors"`
+	Actions []Action       `json:"actions"`
+	Data    map[string]any `json:"data"`
 }
 
 func (n *Notification) WithError(error string) *Notification {
@@ -60,12 +61,18 @@ func (n *Notification) WithAction(action Action) *Notification {
 	return n
 }
 
+func (n *Notification) WithData(key string, value any) *Notification {
+	n.Data[key] = value
+	return n
+}
+
 func NewNotification() *Notification {
 	return &Notification{
 		Id:      uuid.New(),
 		Time:    time.Now(),
 		Errors:  []string{},
 		Actions: []Action{},
+		Data:    map[string]any{},
 	}
 }
 
@@ -184,3 +191,50 @@ func (r *NatsKvLocationsRepository) GetLocation(ctx context.Context, id uuid.UUI
 
 // Interface assertion
 var _ LocationsRepository = (*NatsKvLocationsRepository)(nil)
+
+//------------------------------------------------------------------------------
+
+func AssertOk(err error, logger *slog.Logger, msg string) {
+	if err != nil {
+		logger.Error(msg, "err", err)
+		os.Exit(0)
+	}
+}
+
+func InitialiseKv(js jetstream.JetStream) (jetstream.KeyValue, error) {
+	kvCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	kv, err := js.CreateKeyValue(kvCtx, jetstream.KeyValueConfig{
+		Bucket:  "locations",
+		History: 20,
+	})
+	return kv, err
+}
+
+func InitialiseStreams(js jetstream.JetStream, logger *slog.Logger) error {
+	stream, err := js.CreateOrUpdateStream(
+		context.Background(),
+		jetstream.StreamConfig{
+			Name: "all",
+			Subjects: []string{
+				fmt.Sprintf("%s.>", StreamSubjectCommands),
+			},
+		})
+	if err != nil {
+		return err
+	}
+
+	streamInfo, err := stream.Info(context.Background())
+	if err != nil {
+		return err
+	}
+
+	logger.Debug(
+		fmt.Sprintf("Setup stream '%s'", streamInfo.Config.Name),
+		"stream", streamInfo.Config.Name,
+		"subjects", streamInfo.Config.Subjects,
+	)
+	return nil
+
+}

@@ -36,29 +36,19 @@ func main() {
 
 	// Setup NATS
 	nc, err := nats.Connect(nats.DefaultURL, nats.UserInfo("user", "password"))
-	if err != nil {
-		logger.Error("Failed to connect to NATS server", "err", err)
-		os.Exit(1)
-	}
+	shared.AssertOk(err, logger, "Failed to connect to NATS server")
 
 	js, err := jetstream.New(nc)
-	if err != nil {
-		logger.Error("Failed to initialise JetStream client", "err", err)
-		os.Exit(1)
-	}
+	shared.AssertOk(err, logger, "Failed to iniitalise JetStream client")
 
-	// Initialise dependencies
-	kvCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
+	err = shared.InitialiseStreams(js, logger)
+	shared.AssertOk(err, logger, "Failed to setup NATS streams")
 
-	kv, err := js.CreateKeyValue(kvCtx, jetstream.KeyValueConfig{
-		Bucket:  "locations",
-		History: 20,
-	})
-	if err != nil {
-		logger.Error("Failed to create KV bucket", "err", err)
-		os.Exit(1)
-	}
+	// NATS KV (for repositories)
+	kv, err := shared.InitialiseKv(js)
+	shared.AssertOk(err, logger, "Failed to create KV bucket")
+
+	// Dependencies
 	locationsRepo := shared.NewNatsKvLocationsRepository(kv, logger.With("source", "locations-repo"))
 
 	go func() {
@@ -79,10 +69,7 @@ func main() {
 			FilterSubject: subject,
 			DeliverPolicy: jetstream.DeliverAllPolicy,
 		})
-		if err != nil {
-			logger.Error("Failed to create consumer", "err", err)
-			os.Exit(1)
-		}
+		shared.AssertOk(err, logger, "Failed to create consumer")
 
 		projectToDb := func(msg jetstream.Msg) {
 			meta, _ := msg.Metadata()
@@ -122,10 +109,12 @@ func main() {
 			err = sendNotification(
 				nc,
 				location.Id,
-				*shared.NewNotification().WithAction(shared.Action{
-					Type: "redirect",
-					Data: fmt.Sprintf("./%s", location.Id.String()),
-				}),
+				*shared.NewNotification().
+					WithAction(shared.Action{
+						Type: "redirect",
+						Data: fmt.Sprintf("/locations/%s", location.Id.String()),
+					}).
+					WithData("location", location),
 			)
 			if err != nil {
 				logger.Error("Failed to send notification", "err", err)
