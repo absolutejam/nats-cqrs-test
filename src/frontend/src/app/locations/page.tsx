@@ -16,14 +16,12 @@ function TableRow({
   location: Location;
 }): React.ReactNode {
   return (
-    <tr className="border-b dark:border-gray-700">
+    <tr className="border-b border-border">
       <th
         scope="row"
         className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
       >
-        <a href={`/locations/${id}`} className="hover:text-primary-700">
-          {name}
-        </a>
+        {name}
       </th>
       <td className="px-4 py-3">{category}</td>
       <td className="px-4 py-3">{description}</td>
@@ -58,7 +56,7 @@ function ResultsTable({
   count,
 }: Readonly<{ count: number; children: React.ReactNode }>): React.ReactNode {
   return (
-    <div className="bg-white dark:bg-black relative overflow-hidden">
+    <div className="bg-background relative overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase dark:text-gray-400">

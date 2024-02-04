@@ -85,14 +85,7 @@ func main() {
 
 			logger = logger.With("id", command.Id)
 
-			location := shared.Location{
-				Id:          command.Id,
-				Name:        command.Name,
-				Category:    command.Category,
-				Description: command.Description,
-				CreatedAt:   command.CreatedAt,
-			}
-
+			location := shared.NewLocationFromCommand(command)
 			logger.Info("Projecting Location", "name", location.Name)
 			err = locationsRepo.CreateLocation(context.Background(), location)
 			if err != nil {

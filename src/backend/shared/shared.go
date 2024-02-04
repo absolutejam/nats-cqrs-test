@@ -16,9 +16,12 @@ import (
 //------------------------------------------------------------------------------
 
 const (
-	StreamName                 = "all"
-	StreamSubjectNotifications = "notifications"
-	StreamSubjectCommands      = "commands"
+	StreamName                        = "all"
+	StreamSubjectNotifications        = "notifications"
+	StreamSubjectCommands             = "commands"
+	NotificationAwaitHeader           = "X-Notification-Await"
+	NotificationTimeoutHeader         = "X-Notification-Timeout"
+	NotificationSimulateTimeoutHeader = "X-Notification-Simulate-Timeout"
 )
 
 //------------------------------------------------------------------------------
@@ -89,6 +92,16 @@ type Location struct {
 	Category    string    `json:"category"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+func NewLocationFromCommand(command CreateLocationCommand) Location {
+	return Location{
+		Id:          command.Id,
+		Name:        command.Name,
+		Category:    command.Category,
+		Description: command.Description,
+		CreatedAt:   command.CreatedAt,
+	}
 }
 
 type LocationsRepository interface {

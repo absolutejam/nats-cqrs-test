@@ -2,20 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground: #000;
-  --background: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
+    --foreground: #000;
+    --background: #fff;
+    --border: var(--tw-gray-200);
+    --forminput-bg: var(--tw-gray-50);
+    --forminput-border: var(--tw-gray-300);
+  }
+
+  :root[class~="dark"] {
     --foreground: #fff;
     --background: #000;
+    --border: var(--tw-gray-700);
+    --forminput-bg: var(--tw-gray-950);
+    --forminput-border: var(--tw-gray-600);
   }
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: var(--foreground);
   background: var(--background);
 }
 

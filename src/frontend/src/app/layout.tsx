@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 function TitleBar() {
   return (
-    <nav className="bg-white border-gray-200 dark:bg-black border-b dark:border-gray-900">
+    <nav className="bg-background border-border border-b">
       <div className="flex max-w-screen-xl items-center justify-between mx-auto p-4">
         <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
           <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
@@ -40,7 +40,7 @@ function PageNav(): React.ReactNode {
     { name: "Create location", path: "/locations/create" },
   ];
   return (
-    <nav className="bg-white py-4 border-gray-200 dark:bg-black border-b dark:border-gray-900">
+    <nav className="bg-background py-4 border-border border-b">
       <div className="flex flex-col max-w-screen-xl items-start justify-center mx-auto p-4">
         <div className="flex gap-x-2">
           {links.map(({ name, path }) => {
@@ -48,7 +48,7 @@ function PageNav(): React.ReactNode {
               <a
                 key={name}
                 href={path}
-                className="w-64 hover:border-gray-400 dark:hover:border-gray-700 transition-all duration-200 p-6 bg-white border border-gray-200 rounded-lg dark:bg-black dark:border-gray-900"
+                className="w-64 hover:border-gray-400 dark:hover:border-gray-700 transition-all duration-200 p-6 bg-background border border-border rounded-lg"
               >
                 <h5 className="mb-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                   {name}
@@ -72,9 +72,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.className} min-h-full bg-white dark:bg-black w-full`}
-      >
+      <body className={`${inter.className} min-h-full bg-background w-full`}>
         <Providers>
           <TitleBar />
           <PageNav />

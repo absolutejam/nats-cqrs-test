@@ -1,97 +1,126 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { CreateLocationForm } from "./form";
 
-type OptionsProps = {
-  delaySeconds: number;
-};
-function Options({ delaySeconds }: OptionsProps): React.ReactNode {
+type OptionsProps = Pick<
+  Controls,
+  | "awaitOnServer"
+  | "setAwaitOnServer"
+  | "notificationTimeout"
+  | "setNotificationTimeout"
+  | "simulateTimeout"
+  | "setSimulateTimeout"
+>;
+
+function Options({
+  awaitOnServer,
+  setAwaitOnServer,
+  notificationTimeout,
+  setNotificationTimeout,
+  simulateTimeout,
+  setSimulateTimeout,
+}: OptionsProps): React.ReactNode {
   return (
     <div className="flex flex-col gap-y-2 pt-8 lg:pt-16">
       <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
         Options
       </h2>
 
-      {/* Radio buttons */}
-      <div className="flex flex-col items-start gap-y-2 mb-2">
-        <div className="flex items-center px-2">
-          <input
-            id="default-radio-1"
-            type="radio"
-            // value=""
-            name="default-radio"
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          />
-          <label
-            htmlFor="default-radio-1"
-            className="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-          >
-            Subscribe to notifications after sending request
-          </label>
+      <form className="flex flex-col gap-y-5">
+        {/* Radio buttons */}
+        <div className="flex flex-col items-start gap-y-2">
+          <p>Subscribe to notification on...</p>
+
+          <div className="flex items-center">
+            <div className="flex w-10 justify-center">
+              <input
+                type="radio"
+                id="await-on-client-radio"
+                name="await-on-server-radio"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                defaultChecked={!awaitOnServer}
+                onChange={() => setAwaitOnServer(false)}
+              />
+            </div>
+            <label
+              htmlFor="await-on-client-radio"
+              className="ml-2 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
+              Client
+            </label>
+          </div>
+
+          <div className="flex items-center">
+            <div className="flex w-10 justify-center">
+              <input
+                type="radio"
+                id="await-on-server-radio"
+                name="await-on-server-radio"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                defaultChecked={awaitOnServer}
+                onChange={() => setAwaitOnServer(true)}
+              />
+            </div>
+            <label
+              htmlFor="await-on-server-radio"
+              className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
+              Server
+            </label>
+          </div>
         </div>
 
-        <div className="flex items-center px-2">
-          <input
-            // checked
-            id="default-radio-2"
-            type="radio"
-            // value=""
-            name="default-radio"
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          />
-          <label
-            htmlFor="default-radio-2"
-            className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-          >
-            Checked state
-          </label>
+        <div className="flex flex-col items-start gap-y-2">
+          <p>Timeout</p>
+
+          <div className="flex items-center justify-start flex-row gap-x-2">
+            <div className="flex w-10 p-2 justify-center">
+              <input
+                type="checkbox"
+                id="simulate-timeout"
+                name="simulate-timeout"
+                className="bg-gray-50 border h-5 w-5 border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5 dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                defaultChecked={simulateTimeout}
+                onChange={() => setSimulateTimeout(!simulateTimeout)}
+              />
+            </div>
+
+            <label
+              htmlFor="delay"
+              className="text-sm text-gray-900 dark:text-gray-300"
+            >
+              Simulate timeout waiting for notification
+            </label>
+          </div>
+
+          {/* Input */}
+          <div className="flex items-center justify-start flex-row gap-x-2">
+            <input
+              type="text"
+              id="timeout"
+              name="timeout"
+              className="bg-gray-50 w-10 block p-2 
+              border text-center border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 
+              dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+              defaultValue={notificationTimeout}
+              onChange={(ev) => setNotificationTimeout(+ev.currentTarget.value)}
+            />
+
+            <label
+              htmlFor="timeout"
+              className="text-sm text-gray-900 dark:text-gray-300"
+            >
+              Wait for notification timeout (seconds)
+            </label>
+          </div>
         </div>
-      </div>
-
-      {/* Input */}
-      <div className="flex flex-row gap-x-2">
-        <div className="flex flex-row flex-wrap gap-y-2">
-          <label
-            htmlFor="default-radio-1"
-            className="text-sm font-medium text-gray-900 dark:text-gray-300"
-          >
-            Server-side processing delay (ms)
-          </label>
-
-          <input
-            type="text"
-            name="name"
-            id="name"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            defaultValue={delaySeconds}
-            itemType="number"
-          />
-        </div>
-
-        {/* Input */}
-        <div className="flex flex-row flex-wrap gap-y-2">
-          <label
-            htmlFor="default-radio-1"
-            className="text-sm font-medium text-gray-900 dark:text-gray-300"
-          >
-            Notification timeout (ms)
-          </label>
-
-          <input
-            type="text"
-            name="name"
-            id="name"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-black dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            defaultValue={delaySeconds}
-          />
-        </div>
-      </div>
+      </form>
     </div>
   );
 }
 
 type ResponseLogProps = {
-  log: { source: string; msg: string }[];
+  log: LogMessage[];
 };
 function ResponseLog({ log }: ResponseLogProps): React.ReactNode {
   return (
@@ -103,13 +132,13 @@ function ResponseLog({ log }: ResponseLogProps): React.ReactNode {
         <div className="text-sm pr-2">{log.length} entries</div>
       </div>
 
-      <div className="flex w-full flex-1 flex-col rounded-lg p-3 gap-y-2 border-gray-200 bg-gray-50 dark:bg-gray-950 overflow-auto">
+      <div className="flex w-full flex-1 flex-col rounded-lg p-3 gap-y-2 border-gray-border bg-gray-50 dark:bg-gray-950 overflow-auto">
         {log.length > 0 ? (
           log.toReversed().map(({ source, msg }, i) => {
             return (
               <div
                 key={i}
-                className="flex flex-col flex-1 rounded border border:gray-200 p-2 bg-white dark:bg-black "
+                className="flex flex-col flex-1 rounded border border:gray-200 p-2 bg-background"
               >
                 <div className="flex text-sm flex-shrink-0 px-2 pt-2 font-bold">
                   {source}
@@ -128,26 +157,27 @@ function ResponseLog({ log }: ResponseLogProps): React.ReactNode {
   );
 }
 
-type ResponseState = "error" | "success" | undefined;
-
+export type LogMessage = {
+  source: string;
+  msg: string;
+};
 export type Controls = {
-  log: { source: string; msg: string }[];
+  log: LogMessage[];
   appendLog: (source: string, msg: string) => void;
-  shouldSubscribeSSE: boolean;
-  setDelay: (delaySeconds: number) => void;
-  delaySeconds: number;
-  setNotificationTimeout: (delaySeconds: number) => void;
+  simulateTimeout: boolean;
+  setSimulateTimeout: (state: boolean) => void;
   notificationTimeout: number;
-  setResponseState: (state: ResponseState) => void;
+  setNotificationTimeout: (delaySeconds: number) => void;
+  awaitOnServer: boolean;
+  setAwaitOnServer: (state: boolean) => void;
 };
 
 export default function Home(): React.ReactNode {
   // Serious, production-ready React right here
-  const [log, setLog] = useState<{ source: string; msg: string }[]>([]);
-  const [shouldSubscribeSSE, setShouldSubscribeSSE] = useState<boolean>(false);
-  const [delaySeconds, setDelay] = useState<number>(0);
-  const [notificationTimeout, setNotificationTimeout] = useState<number>(1_000);
-  const [responseState, setResponseState] = useState<ResponseState>(undefined);
+  const [log, setLog] = useState<LogMessage[]>([]);
+  const [simulateTimeout, setSimulateTimeout] = useState(false);
+  const [notificationTimeout, setNotificationTimeout] = useState(1);
+  const [awaitOnServer, setAwaitOnServer] = useState(false);
 
   const appendLog = useCallback(
     (source: string, msg: string) => {
@@ -160,52 +190,22 @@ export default function Home(): React.ReactNode {
 
   return (
     <main className="flex flex-row px-4 max-w-screen-xl mx-auto gap-x-8">
-      <CreateLocationForm appendLog={appendLog} />
+      <CreateLocationForm
+        {...{ appendLog, awaitOnServer, notificationTimeout, simulateTimeout }}
+      />
       <div className="flex flex-1 overflow-x-hidden flex-col gap-y-8 pb-10">
-        <Options delaySeconds={delaySeconds} />
+        <Options
+          {...{
+            simulateTimeout,
+            setSimulateTimeout,
+            notificationTimeout,
+            setNotificationTimeout,
+            awaitOnServer,
+            setAwaitOnServer,
+          }}
+        />
         <ResponseLog log={log} />
       </div>
     </main>
   );
-}
-
-// useEventSourceTicker(es, { intervalMs }, (es) => {
-//   switch (es.readyState) {
-//     case 0:
-//       console.log("[Tick] ES connecting");
-//       break;
-//
-//     case 1:
-//       console.log("[Tick] ES connected");
-//       break;
-//
-//     case 2:
-//       console.log("[Tick] ES disconnected");
-//       break;
-//
-//     default:
-//       break;
-//   }
-// });
-
-type UseEventSourceTickerOpts = {
-  intervalMs?: number;
-  deps?: any[];
-};
-
-function useEventSourceTicker(
-  eventSource: EventSource,
-  opts: UseEventSourceTickerOpts = {},
-  handler: (eventSource: EventSource) => void,
-) {
-  useEffect(() => {
-    const id = setInterval(() => {
-      handler(eventSource);
-    }, opts.intervalMs || 1_000);
-
-    return () => {
-      clearInterval(id);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventSource, ...(opts.deps || [])]);
 }

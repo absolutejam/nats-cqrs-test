@@ -13,14 +13,18 @@ const config: Config = {
     extend: {
       colors: {
         primary: colors.fuchsia,
-      },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+        foreground: "var(--foreground)",
+        background: "var(--background)",
+        border: "var(--border)",
+        "forminput-bg": "var(--forminput-bg)",
+        "forminput-border": "var(--forminput-border)",
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwind-plugin/expose-colors")({
+      extract: ["gray"],
+    }),
+  ],
 };
 export default config;

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -98,11 +99,82 @@ func (p CreateLocationPayload) ToCommand(id uuid.UUID, createdAt time.Time) (*sh
 }
 
 type CommandAcceptedResponse struct {
-	Id uuid.UUID `json:"id"`
+	Id           uuid.UUID            `json:"id"`
+	Notification *shared.Notification `json:"notification"`
 }
 
 type ErrorResponse struct {
 	Error string `json:"error"`
+}
+
+func (c LocationController) parseNotificationHeaders(r *http.Request) (bool, time.Duration, bool) {
+	var (
+		awaitHeader           = r.Header.Get(shared.NotificationAwaitHeader)
+		awaitTimeoutHeader    = r.Header.Get(shared.NotificationTimeoutHeader)
+		simulateTimeoutHeader = r.Header.Get(shared.NotificationSimulateTimeoutHeader)
+
+		err               error = nil
+		awaitNotification       = false
+		awaitTimeout            = time.Duration(2 * time.Second)
+		simulateTimeout         = false
+	)
+
+	if awaitHeader != "" {
+		c.logger.Debug(
+			fmt.Sprintf("Received %s header", shared.NotificationAwaitHeader),
+			"value", awaitHeader,
+		)
+
+		awaitNotification, err = strconv.ParseBool(awaitHeader)
+		if err != nil {
+			c.logger.Warn(
+				fmt.Sprintf("Could not parse header %s into boolean", shared.NotificationAwaitHeader),
+				"value", awaitHeader,
+			)
+		}
+	}
+
+	if awaitTimeoutHeader != "" {
+		c.logger.Debug(
+			fmt.Sprintf("Received %s header", shared.NotificationTimeoutHeader),
+			"value", awaitTimeoutHeader,
+		)
+
+		awaitTimeoutSecs, err := strconv.ParseInt(awaitTimeoutHeader, 0, 0)
+		if err != nil {
+			c.logger.Warn(
+				fmt.Sprintf(
+					"Could not parse header %s - Defaulting to %v",
+					shared.NotificationTimeoutHeader,
+					awaitTimeout,
+				),
+				"value", awaitTimeoutHeader,
+			)
+		} else {
+			awaitTimeout = time.Duration(awaitTimeoutSecs * int64(time.Second))
+		}
+	}
+
+	if simulateTimeoutHeader != "" {
+		c.logger.Debug(
+			fmt.Sprintf("Received %s header", shared.NotificationSimulateTimeoutHeader),
+			"value", simulateTimeoutHeader,
+		)
+
+		simulateTimeout, err = strconv.ParseBool(simulateTimeoutHeader)
+		if err != nil {
+			c.logger.Warn(
+				fmt.Sprintf(
+					"Could not parse header %s - Defaulting to %v",
+					shared.NotificationSimulateTimeoutHeader,
+					simulateTimeout,
+				),
+				"value", simulateTimeoutHeader,
+			)
+		}
+	}
+
+	return awaitNotification, awaitTimeout, simulateTimeout
 }
 
 func (c LocationController) CreateLocationHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +182,8 @@ func (c LocationController) CreateLocationHandler(w http.ResponseWriter, r *http
 		payload = CreateLocationPayload{}
 		id      = uuid.New()
 		subject = fmt.Sprintf("%s.%s.CreateLocation", shared.StreamSubjectCommands, id)
+
+		awaitNotification, awaitTimeout, awaitDelay = c.parseNotificationHeaders(r)
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
@@ -155,8 +229,54 @@ func (c LocationController) CreateLocationHandler(w http.ResponseWriter, r *http
 	}
 	c.logger.Debug("Got publish ack", "seq", ack.Sequence, "stream", ack.Stream)
 
+	response := CommandAcceptedResponse{Id: id}
+
+	if !awaitNotification {
+		render.Status(r, http.StatusAccepted)
+		render.JSON(w, r, response)
+		return
+	}
+
+	c.awaitNotification(&response, awaitTimeout, awaitDelay)
+
 	render.Status(r, http.StatusAccepted)
-	render.JSON(w, r, CommandAcceptedResponse{Id: id})
+	render.JSON(w, r, response)
+}
+
+func (c *LocationController) awaitNotification(response *CommandAcceptedResponse, timeout time.Duration, simulateTimeout bool) {
+	var (
+		notificationsSubject       = fmt.Sprintf("%s.>", shared.StreamSubjectNotifications)
+		err                  error = nil
+		notificationsChan          = make(chan *nats.Msg)
+	)
+	c.logger.Info(
+		"Awaiting notification",
+		"timeout", timeout,
+		"subject", notificationsSubject,
+	)
+
+	if !simulateTimeout {
+		sub, err := c.nc.ChanSubscribe(notificationsSubject, notificationsChan)
+		if err != nil {
+			c.logger.Error("Failed to subscribe to notifications", "err", err)
+		}
+		defer sub.Unsubscribe()
+	}
+
+	select {
+	case notificationMsg := <-notificationsChan:
+		c.logger.Debug("Got notification")
+		notification := &shared.Notification{}
+		err = json.Unmarshal(notificationMsg.Data, notification)
+		if err != nil {
+			c.logger.Error("Failed to parse notification message into Notification")
+			break
+		}
+		response.Notification = notification
+	case <-time.After(timeout):
+		c.logger.Error("Timed out waiting for notification", "timeout", timeout)
+		break
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -212,7 +332,7 @@ func main() {
 	}
 	sseServer.CreateStream(shared.StreamSubjectNotifications)
 
-	// Dependenceis
+	// Dependencies
 	locationsRepo := shared.NewNatsKvLocationsRepository(kv, logger.With("source", "locations-repo"))
 	locationsController := NewLocationController(nc, js, locationsRepo, logger.With("source", "locations-controller"))
 
@@ -220,15 +340,8 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(slogchi.NewWithConfig(logger.With("source", "router"), slogchi.Config{
-		DefaultLevel:       slog.LevelDebug,
-		WithUserAgent:      false,
-		WithRequestID:      false,
-		WithRequestBody:    false,
-		WithRequestHeader:  false,
-		WithResponseBody:   false,
-		WithResponseHeader: false,
-		WithSpanID:         false,
-		WithTraceID:        false,
+		DefaultLevel:  slog.LevelDebug,
+		WithRequestID: true,
 	}))
 	r.Use(middleware.Recoverer)
 
