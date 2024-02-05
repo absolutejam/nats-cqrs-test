@@ -15,8 +15,8 @@ tasks:
   serve:backend:
     desc: Runs backend processes
     deps:
-      - server:backend:server
-      - server:backend:reactor
+      - serve:backend:server
+      - serve:backend:reactor
 
   serve:backend:server:
     desc: Runs backend server
